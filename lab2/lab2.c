@@ -8,15 +8,16 @@
 
 void *printMessage(void *message)
 {
-    if (message != 0)
+    if (message)
     {
         for (int i = 0; i < N; i++)
         {
-            fprintf(stdout, "%s", (char*)message);
+            fprintf(stdout, "%s", (char *)message);
         }
-    }else
+    }
+    else
     {
-        fprintf(stderr, "Main process exited or null pointer was given to function");
+        fprintf(stderr, "Main process exited or null pointer was given to function\n");
     }
 }
 
@@ -32,11 +33,10 @@ int main()
         fprintf(stderr, "pthread_create error: couldn't create thread\n");
         return ERROR;
     }
-    
+
     pthread_join(newThread, NULL);
 
     printMessage(mainThreadText);
 
     pthread_exit(NULL);
 }
-
