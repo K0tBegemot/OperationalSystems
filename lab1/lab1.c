@@ -10,7 +10,7 @@ void* printMessage()
 {
     for (int i = 0; i < N; i++)
     {
-        printf("New thread\n");
+        fprintf(stdout, "New thread\n");
     }
 }
 
@@ -19,17 +19,15 @@ int main()
     pthread_t newThread;
     int createResult = pthread_create(&newThread, NULL, printMessage, NULL);
 
-    if (createResult != PTHREAD_CREATE_ERROR)
-    {
-        printf("pthread_create error: couldn't create thread\n");
+    if (createResult != PTHREAD_CREATE_ERROR) {
+        fprintf(stderr, "pthread_create error: couldn't create thread\n");
         return ERROR;
     }
 
     for (int i = 0; i < N; i++)
     {
-        printf("Main thread\n");
+        fprintf(stdout, "Main thread\n");
     }
 
     pthread_exit(NULL);
 }
-

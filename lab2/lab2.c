@@ -6,30 +6,36 @@
 #define PTHREAD_CREATE_ERROR 0
 #define N 10
 
-void* printMessage()
+void *printMessage(void *message)
 {
-    for (int i = 0; i < N; i++)
+    if (message != 0)
     {
-        printf("New thread\n");
+        for (int i = 0; i < N; i++)
+        {
+            fprintf(stdout, "%s", (char*)message);
+        }
+    }else
+    {
+        fprintf(stderr, "Main process exited or null pointer was given to function");
     }
 }
 
 int main()
 {
+    char *mainThreadText = "Main thread\n";
+    char *childThreadText = "New thread\n";
     pthread_t newThread;
-    int createResult = pthread_create(&newThread, NULL, printMessage, NULL);
+    int createResult = pthread_create(&newThread, NULL, printMessage, childThreadText);
 
-    if (createResult != PTHREAD_CREATE_ERROR) {
-        printf("pthread_create error: couldn't create thread\n");
+    if (createResult != PTHREAD_CREATE_ERROR)
+    {
+        fprintf(stderr, "pthread_create error: couldn't create thread\n");
         return ERROR;
     }
-
+    
     pthread_join(newThread, NULL);
 
-    for (int i = 0; i < N; i++)
-    {
-        printf("Main thread\n");
-    }
+    printMessage(mainThreadText);
 
     pthread_exit(NULL);
 }
