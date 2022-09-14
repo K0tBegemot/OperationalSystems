@@ -8,7 +8,7 @@
 
 void *printMessage(void *message)
 {
-    if (message)
+    if (message != NULL)
     {
         for (int i = 0; i < N; i++)
         {

@@ -16,7 +16,7 @@ void *printMessageChildThread()
 
 void printMessage(char *message)
 {
-    if (message)
+    if (message != NULL)
     {
         for(int i = 0; i < N; i++)
         {
