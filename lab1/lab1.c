@@ -6,18 +6,21 @@
 #define PTHREAD_CREATE_ERROR 0
 #define N 10
 
-void* printMessage() {
+void* printMessage()
+{
     for (int i = 0; i < N; i++)
     {
         printf("New thread\n");
     }
 }
 
-int main() {
-    pthread_t new_thread;
-    int create_result = pthread_create(&new_thread, NULL, printMessage, NULL);
+int main()
+{
+    pthread_t newThread;
+    int createResult = pthread_create(&newThread, NULL, printMessage, NULL);
 
-    if (create_result != PTHREAD_CREATE_ERROR) {
+    if (createResult != PTHREAD_CREATE_ERROR)
+    {
         printf("pthread_create error: couldn't create thread\n");
         return ERROR;
     }
