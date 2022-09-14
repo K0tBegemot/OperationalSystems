@@ -18,7 +18,10 @@ void printMessage(char *message)
 {
     if (message)
     {
-        fprintf(stdout, "%s", message);
+        for(int i = 0; i < N; i++)
+        {
+            fprintf(stdout, "%s", message);
+        }
     }
 }
 
