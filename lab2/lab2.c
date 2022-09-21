@@ -34,7 +34,11 @@ int main()
         return ERROR;
     }
 
-    pthread_join(newThread, NULL);
+    int retCode = pthread_join(newThread, NULL);
+    if(retCode != 0)
+    {
+        fprintf(stderr, "Pthread_join function exit with error. Error code: %d\n", retCode);
+    }
 
     printMessage(mainThreadText);
 
