@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define SUCCESS 0
 #define ERROR 1
-#define PTHREAD_CREATE_ERROR 0
+#define SUCCESS 0
+#define PTHREAD_SUCCESS 0
 #define N 10
 
 void *printMessage(void *message)
@@ -19,28 +19,29 @@ void *printMessage(void *message)
     {
         fprintf(stderr, "Main process exited or null pointer was given to function\n");
     }
+    pthread_exit();
 }
 
 int main()
 {
+    struct retType *ret;
     char *mainThreadText = "Main thread\n";
     char *childThreadText = "New thread\n";
     pthread_t newThread;
     int createResult = pthread_create(&newThread, NULL, printMessage, childThreadText);
-
-    if (createResult != PTHREAD_CREATE_ERROR)
+    if (createResult != PTHREAD_SUCCESS)
     {
         fprintf(stderr, "pthread_create error: couldn't create thread\n");
         return ERROR;
     }
-
-    int retCode = pthread_join(newThread, NULL);
-    if(retCode != 0)
+    int retCode = pthread_join(newThread, &ret);
+    if(retCode != PTHREAD_SUCCESS)
     {
-        fprintf(stderr, "Pthread_join function exit with error. Error code: %d\n", retCode);
+        fprintf(stderr, "Pthread_join function exit with error. Error code: \n");
     }
 
     printMessage(mainThreadText);
 
     pthread_exit(NULL);
+    return SUCCESS;
 }
