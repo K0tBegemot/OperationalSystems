@@ -33,10 +33,14 @@ void printError(int errorCode, char *string)
 {
     if (string)
     {
-        if (errorCode < 0)
+        if (errorCode == CODE_IS_IN_ERRNO)
         {
             perror(string);
             return;
+        }
+        if(errorCode == NULL_POINTER || errorCode == UNCESS_THREAD_ARRAY_INIT)
+        {
+            fprintf(stderr, "%s", string);
         }
         errno = errorCode;
         perror(string);
