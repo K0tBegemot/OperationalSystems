@@ -99,22 +99,21 @@ void freeArrayOfString(arrayOfString *array)
         if (array[i].arrayOfString == NULL)
         {
             printError(NULL_POINTER, "char** in function freeArrayOfString() is NULL\n");
+            continue;
         }
-        else
+
+        for (int j = 0; j < array[i].numberOfString; j++)
         {
-            for (int j = 0; j < array[i].numberOfString; j++)
+            if (array[i].arrayOfString[j] == NULL)
             {
-                if (array[i].arrayOfString[j] == NULL)
-                {
-                    printError(NULL_POINTER, "char* in function freeArrayOfString() is NULL\n");
-                }
-                else
-                {
-                    free(array[i].arrayOfString[j]);
-                }
+                printError(NULL_POINTER, "char* in function freeArrayOfString() is NULL\n");
+                continue;
             }
-            free(array[i].arrayOfString);
+
+            free(array[i].arrayOfString[j]);
         }
+
+        free(array[i].arrayOfString);
     }
     free(array);
 }
@@ -139,18 +138,14 @@ void freeArrayOfThreads(arrayOfThreads *array)
         printError(NULL_POINTER, "arrayOfThreads* in function freeArrayOfThreads() is NULL\n");
         return;
     }
-    else
+    if (array->arrayOfThreads == NULL)
     {
-        if (array->arrayOfThreads == NULL)
-        {
-            printError(NULL_POINTER, "pthread_t* in function freeArrayOfThreads() is NULL\n");
-        }
-        else
-        {
-            free(array->arrayOfThreads);
-        }
+        printError(NULL_POINTER, "pthread_t* in function freeArrayOfThreads() is NULL\n");
         free(array);
+        return;
     }
+    free(array->arrayOfThreads);
+    free(array);
 }
 
 void *printArrayOfString(void *structure)
