@@ -9,6 +9,9 @@
 #define MAIN_SLEEP_TIME 2
 #define PTHREAD_CREATE_SUCCESS_VALUE 0
 #define PTHREAD_CANCEL_SUCCESS_VALUE 0
+#define PTHREAD_JOIN_SUCCESS_VALUE 0
+#define CODE_IS_IN_ERRNO 1
+#define PRINT_ERROR_STRING 0
 
 void printMessage(char* string)
 {
@@ -20,7 +23,7 @@ void printMessage(char* string)
 
 void cleanupHandler(void *args)
 {
-    printMessage("Ckeanup Handler executed here\n");
+    printMessage("Cleanup Handler executed here\n");
 }
 
 void *threadFunction(void *string)
@@ -34,11 +37,15 @@ void *threadFunction(void *string)
     }
 }
 
-void printError(char *string)
+void printError(int errorCode, char *string)
 {
-    if (string)
+    if (string != NULL && errorCode == PRINT_ERROR_STRING)
     {
         fprintf(stderr, "%s", string);
+    }
+    if(errorCode == CODE_IS_IN_ERRNO)
+    {
+        perror(string);
     }
 }
 
@@ -50,14 +57,14 @@ int main()
     int ret = pthread_create(&thread, NULL, threadFunction, string);
     if (ret != PTHREAD_CREATE_SUCCESS_VALUE)
     {
-        printError("Error. Child thread wasn't created\n");
+        printError(CODE_IS_IN_ERRNO, "Error. Child thread wasn't created\n");
         return 0;
     }
     sleep(MAIN_SLEEP_TIME);
     int ret3 = pthread_cancel(thread);
     if (ret3 != PTHREAD_CANCEL_SUCCESS_VALUE)
     {
-        printError("Error occured in function pthread_cancel. There is no such thread\n");
+        printError(CODE_IS_IN_ERRNO, "Error occured in function pthread_cancel. There is no such thread\n");
         return 0;
     }
     int ret1 = pthread_join(thread, &threadRes);
@@ -66,14 +73,14 @@ int main()
         printMessage("Thread was cancelled. Ok\n");
         return 0;
     }
-    if (ret1 == 0 && ret3 == 0)
+    if (ret1 == PTHREAD_JOIN_SUCCESS_VALUE && ret3 == PTHREAD_CANCEL_SUCCESS_VALUE)
     {
         printMessage("Child thread returned earlier then pthread_cancel was executed\n");
         return 0;
     }
     if (ret1 == ESRCH || ret3 == ESRCH)
     {
-        printError("Errors in function pthread_cancel and pthread_join. There is no such thread\n");
+        printError(PRINT_ERROR_STRING, "Errors in function pthread_cancel and pthread_join. There is no such thread\n");
         return 0;
     }
     return 0;
