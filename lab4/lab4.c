@@ -35,7 +35,7 @@ void printError(int errorCode, char *string)
 
 void printMessage(char *string)
 {
-    if (string)
+    if (string != NULL)
     {
         fprintf(stdout, "%s", string);
     }
