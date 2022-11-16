@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define CHILD_SLEEP_TIME 5
 #define MAIN_SLEEP_TIME 2
@@ -16,8 +17,11 @@ void *threadFunction(void *string)
 {
     if (string != 0)
     {
-        fprintf(stdout, "%s", (char *)string);
-        sleep(CHILD_SLEEP_TIME);
+        while(true)
+        {
+            fprintf(stdout, "%s", (char *)string);
+            //sleep(CHILD_SLEEP_TIME);
+        }
     }
 }
 

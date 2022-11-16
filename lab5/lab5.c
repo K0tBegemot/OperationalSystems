@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define NOT_EXECUTE 0
 #define CHILD_SLEEP_TIME 5
@@ -13,7 +14,7 @@
 #define CODE_IS_IN_ERRNO 1
 #define PRINT_ERROR_STRING 0
 
-void printMessage(char* string)
+void printMessage(char *string)
 {
     if (string != NULL)
     {
@@ -31,8 +32,11 @@ void *threadFunction(void *string)
     if (string != NULL)
     {
         pthread_cleanup_push(cleanupHandler, NULL);
-        fprintf(stdout, "%s", (char *)string);
-        sleep(CHILD_SLEEP_TIME);
+        while (true)
+        {
+            fprintf(stdout, "%s", (char *)string);
+        }
+        // sleep(CHILD_SLEEP_TIME);
         pthread_cleanup_pop(NOT_EXECUTE);
     }
 }
@@ -43,7 +47,7 @@ void printError(int errorCode, char *string)
     {
         fprintf(stderr, "%s", string);
     }
-    if(errorCode == CODE_IS_IN_ERRNO)
+    if (errorCode == CODE_IS_IN_ERRNO)
     {
         perror(string);
     }
