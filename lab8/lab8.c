@@ -19,6 +19,7 @@
 #define PTHREAD_END 0
 #define PTHREAD_EXECUTED 1
 #define DEF_RET_THREAD_NUMBER 0
+#define NOT_EXECUTE 0
 
 typedef struct arrayOfThreads
 {
@@ -121,7 +122,6 @@ int getDataLastBound(threadInitData *initData)
 void *countPIThread(void *initData)
 {
     double *localPIRetValue = (double *)malloc(sizeof(double));
-    pthread_cleanup_push(cleanup_countPI_handler_1, localPIRetValue);
     *localPIRetValue = 0;
     int localFirst = getFirstDataIndex((threadInitData *)initData);
     int localLast = getDataLastBound((threadInitData *)initData);
@@ -130,7 +130,6 @@ void *countPIThread(void *initData)
         (*localPIRetValue) += (1.0 / (i * 4.0 + 1.0));
         (*localPIRetValue) -= (1.0 / (i * 4.0 + 3.0));
     }
-    pthread_cleanup_pop(cleanup_countPI_handler_1);
     pthread_exit((void *)(localPIRetValue));
 }
 
