@@ -20,6 +20,11 @@
 #define PTHREAD_EXECUTED 1
 #define DEF_RET_THREAD_NUMBER 0
 #define NOT_EXECUTE 0
+#define IS_NUMBER 0
+#define IS_NOT_NUMBER 1
+#define END_OF_C_LINE 0
+#define INDEX_STEP 1
+#define INVALID_PI -1
 
 typedef struct arrayOfThreads
 {
@@ -32,6 +37,22 @@ typedef struct threadInitData
     int firstIndex;
     int iterationNumber;
 } threadInitData;
+
+int isNumber(char *numberStr)
+{
+    int index = 0;
+    int retValue = IS_NUMBER;
+    while (numberStr[index] != END_OF_C_LINE)
+    {
+        if (numberStr[index] < '0' || numberStr[index] > '9')
+        {
+            retValue = IS_NOT_NUMBER;
+            break;
+        }
+        index += INDEX_STEP;
+    }
+    return retValue;
+}
 
 void printError(int errorCode, char *string)
 {
@@ -139,7 +160,7 @@ double countPI(arrayOfThreads *arrayOfThreads, int numberOfIterations)
     if (arrayOfThreads == NULL || arrayOfThreads->arrayOfThreads == NULL)
     {
         printError(PRINT_ERROR_STRING, "Array of thread is null\n");
-        return retDouble;
+        return INVALID_PI;
     }
     threadInitData *initData = initialiseInitData(numberOfIterations, arrayOfThreads->numberOfThreads);
     for (int i = 0; i < arrayOfThreads->numberOfThreads; i++)
@@ -148,7 +169,7 @@ double countPI(arrayOfThreads *arrayOfThreads, int numberOfIterations)
         if (retCode != PTHREAD_CREATE_SUCCESS_VALUE)
         {
             printError(CODE_IS_IN_ERRNO, "Error in function pthread_create!\n");
-            return retDouble;
+            return INVALID_PI;
         }
     }
     for (int i = 0; i < arrayOfThreads->numberOfThreads; i++)
@@ -158,7 +179,7 @@ double countPI(arrayOfThreads *arrayOfThreads, int numberOfIterations)
         if (retCode != PTHREAD_JOIN_SUCCESS_VALUE)
         {
             fprintf(stderr, "Thread number %d hasn't been joined. Code of error is %d\n", i, retCode);
-            return retDouble;
+            return INVALID_PI;
         }
         retDouble += *(retDoubleThread);
     }
@@ -172,10 +193,20 @@ int main(int argc, char **argv)
         printError(PRINT_ERROR_STRING, "There is no parameter for number of threads. Try again!\n");
         return 0;
     }
+    if(isNumber(argv[ARGV_NUM_OF_THREADS_INDEX]) == IS_NOT_NUMBER)
+    {
+        printError(PRINT_ERROR_STRING, "Number of threads parameter is not number. Try again!\n");
+        return 0;
+    }
     arrayOfThreads *array = initialiseArrayOfThreads(atoi(argv[ARGV_NUM_OF_THREADS_INDEX]));
     double pi = countPI(array, NUMBER_OF_ITERATIONS);
+    if(pi == INVALID_PI)
+    {
+        printError(PRINT_ERROR_STRING, "Error happened during execution of programm. Try again!\n");
+        return 0;
+    }
     pi *= 4;
     freeArrayOfThreads(array);
-    fprintf(stdout, "%.15lf", pi);
+    fprintf(stdout, "\nPI number: %.15lf\n", pi);
     return 0;
 }

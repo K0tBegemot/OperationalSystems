@@ -19,6 +19,11 @@
 #define PTHREAD_MUTEX_CONSISTENT_SUCCESS 0
 #define PTHREAD_MUTEX_UNLOCK_SUCCESS 0
 #define SYNCHRO_TIME 1
+#define FIRST_THREAD_INDEX 0
+#define SECOND_THREAD_INDEX 1
+#define FIRST_THREAD_FIRST_LOCK_INDEX 0
+#define SECOND_THREAD_FIRST_LOCK_INDEX (NUMBER_OF_MUTEX - 1)
+#define PTHREAD_JOIN_SUCCESS 0
 
 #define INIT_LOCK_PRIMITIVE_SUCCESS 0
 #define INIT_LOCK_PRIMITIVE_ERROR 1
@@ -27,6 +32,13 @@ typedef struct lockPrimitive
 {
     pthread_mutex_t mutexArray[NUMBER_OF_MUTEX];
 } lockPrimitive;
+
+typedef struct threadData
+{
+    int threadIndex;
+    int firstLockMutexIndex;
+    char *message;
+} threadData;
 
 lockPrimitive locker;
 
@@ -48,10 +60,7 @@ void printMessage(char *message)
     {
         return;
     }
-    for (int i = 0; i < NUMBER_OF_STRING; i++)
-    {
-        fprintf(stdout, "%s", message);
-    }
+    fprintf(stdout, "%s", message);
     return;
 }
 
@@ -139,13 +148,22 @@ int initLockPrimitive()
         }
     }
     pthread_mutexattr_destroy(&attr);
-    return lockMutex(FIRST_MUTEX_INDEX);
+    return lockMutex(FIRST_THREAD_FIRST_LOCK_INDEX);
 }
 
-void *printPrimitiveFirst()
+void *printPrimitive(void *voidData)
 {
-    int cur_mutex_index = 0;
+    threadData *data = (threadData *)voidData;
+    int cur_mutex_index = data->firstLockMutexIndex;
     int retCode = 0;
+    if (data->threadIndex == SECOND_THREAD_INDEX)
+    {
+        retCode = lockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
+        if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
+        {
+            return NULL;
+        }
+    }
     for (int i = 0; i < N; i++)
     {
         retCode = lockMutex((cur_mutex_index + 1) % NUMBER_OF_MUTEX);
@@ -153,7 +171,7 @@ void *printPrimitiveFirst()
         {
             return NULL;
         }
-        printMessage("This is \"Parent\" thread!\n");
+        printMessage(data->message);
         unlockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
         if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
         {
@@ -169,56 +187,30 @@ void *printPrimitiveFirst()
     pthread_exit(NULL);
 }
 
-void printMessageChildThread()
-{
-    for (int i = 0; i < NUMBER_OF_STRING; i++)
-    {
-        fprintf(stdout, "New thread\n");
-    }
-}
-
-void *printPrimitiveSecond()
-{
-    int cur_mutex_index = NUMBER_OF_MUTEX - 1;
-    int retCode = 0;
-    retCode = lockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
-    if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
-    {
-        return NULL;
-    }
-    for (int i = 0; i < N; i++)
-    {
-        retCode = lockMutex((cur_mutex_index + 1) % NUMBER_OF_MUTEX);
-        if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
-        {
-            return NULL;
-        }
-        printMessageChildThread();
-        unlockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
-        if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
-        {
-            return NULL;
-        }
-        cur_mutex_index = (cur_mutex_index + 1) % NUMBER_OF_MUTEX;
-    }
-    retCode = unlockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
-    if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
-    {
-        return NULL;
-    }
-    pthread_exit(NULL);
-}
-
 int main()
 {
     pthread_t newThread;
     initLockPrimitive();
-    int createResult = pthread_create(&newThread, NULL, printPrimitiveSecond, NULL);
+    threadData childData;
+    childData.threadIndex = SECOND_THREAD_INDEX;
+    childData.firstLockMutexIndex = SECOND_THREAD_FIRST_LOCK_INDEX;
+    childData.message = "This is second thread!\n";
+    int createResult = pthread_create(&newThread, NULL, printPrimitive, &childData);
     sleep(SYNCHRO_TIME);
     if (createResult != PTHREAD_CREATE_SUCCESS)
     {
         printError(PRINT_ERROR_STRING, "Error: pthread_create couldn't create thread\n");
         return ERROR;
     }
-    printPrimitiveFirst();
+    threadData mainData;
+    mainData.threadIndex = FIRST_THREAD_INDEX;
+    mainData.firstLockMutexIndex = FIRST_THREAD_FIRST_LOCK_INDEX;
+    mainData.message = "This is first thread!\n";
+    printPrimitive(&mainData);
+    int joinResult = pthread_join(newThread, NULL);
+    if (joinResult != PTHREAD_JOIN_SUCCESS)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+        return ERROR;
+    }
 }

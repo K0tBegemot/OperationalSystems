@@ -22,6 +22,7 @@
 #define PTHREAD_COND_INIT_SUCCESS 0
 #define PTHREAD_COND_WAIT_SUCCESS 0
 #define PTHREAD_COND_WAIT_ERROR 1
+#define PTHREAD_JOIN_SUCCESS 0
 
 typedef struct lockPrimitive
 {
@@ -29,6 +30,12 @@ typedef struct lockPrimitive
     pthread_cond_t condVar;
     int numberOfLastThread;
 } lockPrimitive;
+
+typedef struct threadData
+{
+    int threadNumber;
+    char* message;
+}threadData;
 
 lockPrimitive locker;
 
@@ -50,10 +57,7 @@ void printMessage(char *message)
     {
         return;
     }
-    for (int i = 0; i < NUMBER_OF_STRING; i++)
-    {
-        fprintf(stdout, "%s", message);
-    }
+    fprintf(stdout, "%s", message);
     return;
 }
 
@@ -177,10 +181,11 @@ int initLockPrimitive()
     return INIT_LOCK_PRIMITIVE_SUCCESS;
 }
 
-void *printPrimitiveFirst()
+void *printPrimitive(void* voidData)
 {
     int retCode = 0;
     int currentIndex = 0;
+    threadData* data = (threadData*)voidData;
     while(currentIndex < N)
     {
         retCode = lockMutex();
@@ -188,7 +193,7 @@ void *printPrimitiveFirst()
         {
             return NULL;
         }
-        while(locker.numberOfLastThread == NUMBER_OF_FIRST_THREAD)
+        while(locker.numberOfLastThread == data->threadNumber)
         {
             retCode = waitCond();
             if(retCode != PTHREAD_COND_WAIT_SUCCESS)
@@ -196,51 +201,11 @@ void *printPrimitiveFirst()
                 return NULL;
             }
         }
-        printMessage("This is \"Parent\" thread!\n");
-        locker.numberOfLastThread = NUMBER_OF_FIRST_THREAD;
+        printMessage(data->message);
+        locker.numberOfLastThread = data->threadNumber;
         currentIndex += 1;
         retCode = unlockMutex();
         if(retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
-        {
-            return NULL;
-        }
-        retCode = pthread_cond_signal(&locker.condVar);
-    }
-    pthread_exit(NULL);
-}
-
-void printMessageChildThread()
-{
-    for (int i = 0; i < NUMBER_OF_STRING; i++)
-    {
-        fprintf(stdout, "New thread\n");
-    }
-}
-
-void *printPrimitiveSecond()
-{
-    int curIndex = 0;
-    int retCode = 0;
-    while(curIndex < N)
-    {
-        retCode = lockMutex();
-        if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
-        {
-            return NULL;
-        }
-        while(locker.numberOfLastThread == NUMBER_OF_SECOND_THREAD)
-        {
-            retCode = waitCond();
-            if(retCode != PTHREAD_COND_WAIT_SUCCESS)
-            {
-                return NULL;
-            }
-        }
-        printMessageChildThread();
-        locker.numberOfLastThread = NUMBER_OF_SECOND_THREAD;
-        curIndex += 1;
-        retCode = unlockMutex();
-        if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
         {
             return NULL;
         }
@@ -253,12 +218,24 @@ int main()
 {
     pthread_t newThread;
     initLockPrimitive();
-    int createResult = pthread_create(&newThread, NULL, printPrimitiveSecond, NULL);
+    threadData childData;
+    childData.threadNumber = NUMBER_OF_SECOND_THREAD;
+    childData.message = "This is second thread!\n";
+    int createResult = pthread_create(&newThread, NULL, printPrimitive, &childData);
     if (createResult != PTHREAD_CREATE_SUCCESS)
     {
         printError(PRINT_ERROR_STRING, "Error: pthread_create couldn't create thread\n");
         return ERROR;
     }
-    printPrimitiveFirst();
+    threadData mainData;
+    mainData.threadNumber = NUMBER_OF_FIRST_THREAD;
+    mainData.message = "This is first thread!\n";
+    printPrimitive(&mainData);
+    int joinResult = pthread_join(newThread, NULL);
+    if (joinResult != PTHREAD_JOIN_SUCCESS)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+        return ERROR;
+    }
     pthread_exit(NULL);
 }
