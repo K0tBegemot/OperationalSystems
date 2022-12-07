@@ -34,8 +34,8 @@ typedef struct lockPrimitive
 typedef struct threadData
 {
     int threadNumber;
-    char* message;
-}threadData;
+    char *message;
+} threadData;
 
 lockPrimitive locker;
 
@@ -105,14 +105,14 @@ int mutexUnlockErrorChecker(int errorCode, pthread_mutex_t *mutex)
     return INIT_LOCK_PRIMITIVE_SUCCESS;
 }
 
-int condErrorChecker(int errorCode, pthread_cond_t* cond, pthread_mutex_t* mutex)
+int condErrorChecker(int errorCode, pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
-    if((mutexLockErrorChecker(errorCode, mutex) || mutexUnlockErrorChecker(errorCode, mutex)) != PTHREAD_COND_WAIT_SUCCESS)
+    if ((mutexLockErrorChecker(errorCode, mutex) || mutexUnlockErrorChecker(errorCode, mutex)) != PTHREAD_COND_WAIT_SUCCESS)
     {
         return PTHREAD_COND_WAIT_ERROR;
     }
     int retCode = pthread_cond_wait(cond, mutex);
-    if(retCode != PTHREAD_COND_WAIT_SUCCESS)
+    if (retCode != PTHREAD_COND_WAIT_SUCCESS)
     {
         return condErrorChecker(retCode, cond, mutex);
     }
@@ -145,10 +145,10 @@ int unlockMutex()
 
 int waitCond()
 {
-    pthread_cond_t* cond = &locker.condVar;
-    pthread_mutex_t* mutex = &locker.mutex;
+    pthread_cond_t *cond = &locker.condVar;
+    pthread_mutex_t *mutex = &locker.mutex;
     int retCode = pthread_cond_wait(&locker.condVar, &locker.mutex);
-    if(retCode != PTHREAD_COND_WAIT_SUCCESS)
+    if (retCode != PTHREAD_COND_WAIT_SUCCESS)
     {
         retCode = condErrorChecker(retCode, cond, mutex);
         return retCode;
@@ -181,22 +181,22 @@ int initLockPrimitive()
     return INIT_LOCK_PRIMITIVE_SUCCESS;
 }
 
-void *printPrimitive(void* voidData)
+void *printPrimitive(void *voidData)
 {
     int retCode = 0;
     int currentIndex = 0;
-    threadData* data = (threadData*)voidData;
-    while(currentIndex < N)
+    threadData *data = (threadData *)voidData;
+    while (currentIndex < N)
     {
         retCode = lockMutex();
         if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
         {
             return NULL;
         }
-        while(locker.numberOfLastThread == data->threadNumber)
+        while (locker.numberOfLastThread == data->threadNumber)
         {
             retCode = waitCond();
-            if(retCode != PTHREAD_COND_WAIT_SUCCESS)
+            if (retCode != PTHREAD_COND_WAIT_SUCCESS)
             {
                 return NULL;
             }
@@ -205,7 +205,7 @@ void *printPrimitive(void* voidData)
         locker.numberOfLastThread = data->threadNumber;
         currentIndex += 1;
         retCode = unlockMutex();
-        if(retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
+        if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
         {
             return NULL;
         }
