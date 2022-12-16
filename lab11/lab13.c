@@ -23,6 +23,8 @@
 #define PTHREAD_COND_WAIT_SUCCESS 0
 #define PTHREAD_COND_WAIT_ERROR 1
 #define PTHREAD_JOIN_SUCCESS 0
+#define PTHREAD_ATTR_INIT_SUCCESS 0
+#define PTHREAD_SET_DETACH_SUCCESS 0
 
 typedef struct lockPrimitive
 {
@@ -221,7 +223,20 @@ int main()
     threadData childData;
     childData.threadNumber = NUMBER_OF_SECOND_THREAD;
     childData.message = "This is second thread!\n";
-    int createResult = pthread_create(&newThread, NULL, printPrimitive, &childData);
+    pthread_attr_t attr;
+    int retCode = pthread_attr_init(&attr);
+    if(retCode != PTHREAD_ATTR_INIT_SUCCESS)
+    {
+        printError(PRINT_ERROR_STRING, "Error: pthread_attr_init couldn't initialise pthread_attr\n");
+        return ERROR;
+    }
+    retCode = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if(retCode != PTHREAD_SET_DETACH_SUCCESS)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: pthread_create couldn't create thread\n");
+        return ERROR;
+    }
+    int createResult = pthread_create(&newThread, &attr, printPrimitive, &childData);
     if (createResult != PTHREAD_CREATE_SUCCESS)
     {
         printError(PRINT_ERROR_STRING, "Error: pthread_create couldn't create thread\n");
@@ -231,11 +246,11 @@ int main()
     mainData.threadNumber = NUMBER_OF_FIRST_THREAD;
     mainData.message = "This is first thread!\n";
     printPrimitive(&mainData);
-    int joinResult = pthread_join(newThread, NULL);
-    if (joinResult != PTHREAD_JOIN_SUCCESS)
-    {
-        printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
-        return ERROR;
-    }
+    // int joinResult = pthread_join(newThread, NULL);
+    // if (joinResult != PTHREAD_JOIN_SUCCESS)
+    // {
+    //     printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+    //     return ERROR;
+    // }
     pthread_exit(NULL);
 }

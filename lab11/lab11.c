@@ -24,6 +24,8 @@
 #define FIRST_THREAD_FIRST_LOCK_INDEX 0
 #define SECOND_THREAD_FIRST_LOCK_INDEX (NUMBER_OF_MUTEX - 1)
 #define PTHREAD_JOIN_SUCCESS 0
+#define PTHREAD_ATTR_INIT_SUCCESS 0
+#define PTHREAD_SET_DETACH_SUCCESS 0
 
 #define INIT_LOCK_PRIMITIVE_SUCCESS 0
 #define INIT_LOCK_PRIMITIVE_ERROR 1
@@ -200,7 +202,20 @@ int main()
     childData.threadIndex = SECOND_THREAD_INDEX;
     childData.firstLockMutexIndex = SECOND_THREAD_FIRST_LOCK_INDEX;
     childData.message = "This is second thread!\n";
-    int createResult = pthread_create(&newThread, NULL, printPrimitive, &childData);
+    pthread_attr_t attr;
+    int retCode = pthread_attr_init(&attr);
+    if(retCode != PTHREAD_ATTR_INIT_SUCCESS)
+    {
+        printError(PRINT_ERROR_STRING, "Error: pthread_attr_init couldn't initialise pthread_attr\n");
+        return ERROR;
+    }
+    retCode = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if(retCode != PTHREAD_SET_DETACH_SUCCESS)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: pthread_create couldn't create thread\n");
+        return ERROR;
+    }
+    int createResult = pthread_create(&newThread, &attr, printPrimitive, &childData);
     if (createResult != PTHREAD_CREATE_SUCCESS)
     {
         printError(PRINT_ERROR_STRING, "Error: pthread_create couldn't create thread\n");
@@ -212,11 +227,11 @@ int main()
     mainData.firstLockMutexIndex = FIRST_THREAD_FIRST_LOCK_INDEX;
     mainData.message = "This is first thread!\n";
     printPrimitive(&mainData);
-    int joinResult = pthread_join(newThread, NULL);
-    if (joinResult != PTHREAD_JOIN_SUCCESS)
-    {
-        printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
-        return ERROR;
-    }
+    // int joinResult = pthread_join(newThread, NULL);
+    // if (joinResult != PTHREAD_JOIN_SUCCESS)
+    // {
+    //     printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+    //     return ERROR;
+    // }
     return SUCCESS;
 }
