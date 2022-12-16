@@ -122,6 +122,14 @@ threadInitData *initialiseInitData(int numberOfIterations, int numberOfThreads)
     return initData;
 }
 
+void freeInitData(threadInitData* data)
+{
+    if(data != NULL)
+    {
+        free(data);
+    }
+}
+
 void cleanup_countPI_handler_1(void *doublePointer)
 {
     if (doublePointer != NULL)
@@ -183,14 +191,15 @@ double countPI(arrayOfThreads *arrayOfThreads, int numberOfIterations)
         }
         retDouble += *(retDoubleThread);
     }
+    freeInitData(initData);
     return retDouble;
 }
 
 int main(int argc, char **argv)
 {
-    if (argc < RIGHT_NUMBER_OF_ARGS)
+    if (argc != RIGHT_NUMBER_OF_ARGS)
     {
-        printError(PRINT_ERROR_STRING, "There is no parameter for number of threads. Try again!\n");
+        printError(PRINT_ERROR_STRING, "Wrong number of parameters in programm. Try again!\n");
         return 0;
     }
     if(isNumber(argv[ARGV_NUM_OF_THREADS_INDEX]) == IS_NOT_NUMBER)

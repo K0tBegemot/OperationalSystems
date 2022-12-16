@@ -148,7 +148,12 @@ int initLockPrimitive()
         }
     }
     pthread_mutexattr_destroy(&attr);
-    return lockMutex(FIRST_THREAD_FIRST_LOCK_INDEX);
+    int retCode = lockMutex(FIRST_THREAD_FIRST_LOCK_INDEX);
+    if(retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
+    {
+        return INIT_LOCK_PRIMITIVE_ERROR;
+    }
+    return INIT_LOCK_PRIMITIVE_SUCCESS;
 }
 
 void *printPrimitive(void *voidData)
@@ -161,7 +166,7 @@ void *printPrimitive(void *voidData)
         retCode = lockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
         if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
         {
-            return NULL;
+            pthread_exit(NULL);
         }
     }
     for (int i = 0; i < N; i++)
@@ -169,20 +174,20 @@ void *printPrimitive(void *voidData)
         retCode = lockMutex((cur_mutex_index + 1) % NUMBER_OF_MUTEX);
         if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
         {
-            return NULL;
+            pthread_exit(NULL);
         }
         printMessage(data->message);
-        unlockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
+        retCode = unlockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
         if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
         {
-            return NULL;
+            pthread_exit(NULL);
         }
         cur_mutex_index = (cur_mutex_index + 1) % NUMBER_OF_MUTEX;
     }
     retCode = unlockMutex(cur_mutex_index % NUMBER_OF_MUTEX);
     if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
     {
-        return NULL;
+        pthread_exit(NULL);
     }
     pthread_exit(NULL);
 }
@@ -196,12 +201,12 @@ int main()
     childData.firstLockMutexIndex = SECOND_THREAD_FIRST_LOCK_INDEX;
     childData.message = "This is second thread!\n";
     int createResult = pthread_create(&newThread, NULL, printPrimitive, &childData);
-    sleep(SYNCHRO_TIME);
     if (createResult != PTHREAD_CREATE_SUCCESS)
     {
         printError(PRINT_ERROR_STRING, "Error: pthread_create couldn't create thread\n");
         return ERROR;
     }
+    sleep(SYNCHRO_TIME);
     threadData mainData;
     mainData.threadIndex = FIRST_THREAD_INDEX;
     mainData.firstLockMutexIndex = FIRST_THREAD_FIRST_LOCK_INDEX;
@@ -213,4 +218,5 @@ int main()
         printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
         return ERROR;
     }
+    return SUCCESS;
 }

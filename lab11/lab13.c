@@ -191,14 +191,14 @@ void *printPrimitive(void *voidData)
         retCode = lockMutex();
         if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
         {
-            return NULL;
+            pthread_exit(NULL);
         }
         while (locker.numberOfLastThread == data->threadNumber)
         {
             retCode = waitCond();
             if (retCode != PTHREAD_COND_WAIT_SUCCESS)
             {
-                return NULL;
+                pthread_exit(NULL);
             }
         }
         printMessage(data->message);
@@ -207,7 +207,7 @@ void *printPrimitive(void *voidData)
         retCode = unlockMutex();
         if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
         {
-            return NULL;
+            pthread_exit(NULL);
         }
         retCode = pthread_cond_signal(&locker.condVar);
     }
