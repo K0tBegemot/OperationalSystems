@@ -152,7 +152,7 @@ int unlockLockPrimitive()
     return INIT_LOCK_PRIMITIVE_SUCCESS;
 }
 
-int destroyLockPrimitive()
+void destroyLockPrimitive()
 {
     for (int i = 0; i < NUMBER_OF_MUTEX; i++)
     {
@@ -160,13 +160,10 @@ int destroyLockPrimitive()
         if (retCode != PTHREAD_MUTEX_DESTROY_SUCCESS)
         {
             retCode = destroyLockPrimitiveErrorHandler(retCode);
-            if (retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-            {
-                return retCode;
-            }
+            return;
         }
     }
-    return DESTROY_LOCK_PRIMITIVE_SUCCESS;
+    return;
 }
 
 int initLockPrimitive()
@@ -181,11 +178,7 @@ int initLockPrimitive()
         {
             errno = retCode;
             printError(CODE_IS_IN_ERRNO, "Error while processing pthread_mutex_init\n");
-            retCode = destroyLockPrimitive();
-            if (retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-            {
-                return INIT_LOCK_PRIMITIVE_ERROR;
-            }
+            destroyLockPrimitive();
             return INIT_LOCK_PRIMITIVE_ERROR;
         }
     }
@@ -193,11 +186,7 @@ int initLockPrimitive()
     int retCode = lockMutex(FIRST_THREAD_FIRST_LOCK_INDEX);
     if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
     {
-        retCode = destroyLockPrimitive();
-        if (retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-        {
-            return INIT_LOCK_PRIMITIVE_ERROR;
-        }
+        destroyLockPrimitive();
         return INIT_LOCK_PRIMITIVE_ERROR;
     }
     return INIT_LOCK_PRIMITIVE_SUCCESS;
@@ -261,18 +250,19 @@ int main()
     long thread1RetValue = (long)printPrimitive(&mainData);
     long thread2RetValue = PRINT_PRIMITIVE_ERROR;
     int joinResult = pthread_join(newThread, (void **)(&thread2RetValue));
-    if (joinResult != PTHREAD_JOIN_SUCCESS || (thread1RetValue == PRINT_PRIMITIVE_ERROR || thread2RetValue == PRINT_PRIMITIVE_ERROR))
+    int retCode = unlockLockPrimitive();
+    if (retCode == INIT_LOCK_PRIMITIVE_SUCCESS)
     {
-        int retCode = unlockLockPrimitive();
-        if (retCode == INIT_LOCK_PRIMITIVE_SUCCESS)
-        {
-            retCode = destroyLockPrimitive();
-            if (retCode != DESTROY_LOCK_PRIMITIVE_SUCCESS)
-            {
-                return ERROR;
-            }
-        }
+        destroyLockPrimitive();
+    }
+    if (joinResult != PTHREAD_JOIN_SUCCESS)
+    {
         printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+        return ERROR;
+    }
+    if (thread1RetValue == PRINT_PRIMITIVE_ERROR || thread2RetValue == PRINT_PRIMITIVE_ERROR)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: one of the threads ended with an error\n");
         return ERROR;
     }
     return SUCCESS;

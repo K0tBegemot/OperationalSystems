@@ -152,11 +152,11 @@ int waitCond()
 
 int destroyMutexErrorHandler(int errorCode)
 {
-    if(errorCode == EINVAL)
+    if (errorCode == EINVAL)
     {
         return DESTROY_LOCK_PRIMITIVE_SUCCESS;
     }
-    if(errorCode == EBUSY)
+    if (errorCode == EBUSY)
     {
         errno = errorCode;
         printError(CODE_IS_IN_ERRNO, "Error. Function try to destroy locked mutex\n");
@@ -167,11 +167,11 @@ int destroyMutexErrorHandler(int errorCode)
 
 int destroyCondVarErrorHandler(int errorCode)
 {
-    if(errorCode == EINVAL)
+    if (errorCode == EINVAL)
     {
         return DESTROY_LOCK_PRIMITIVE_SUCCESS;
     }
-    if(errorCode == EBUSY)
+    if (errorCode == EBUSY)
     {
         errno = errorCode;
         printError(CODE_IS_IN_ERRNO, "Error. Function try to destroy waited condition variable\n");
@@ -180,36 +180,30 @@ int destroyCondVarErrorHandler(int errorCode)
     return DESTROY_LOCK_PRIMITIVE_SUCCESS;
 }
 
-int destroyLockPrimitive()
+void destroyLockPrimitive()
 {
     int retCode = pthread_mutex_destroy(&locker.mutex);
     if (retCode != PTHREAD_MUTEX_DESTROY_SUCCESS)
     {
         retCode = destroyMutexErrorHandler(retCode);
-        if (retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-        {
-            return retCode;
-        }
+        return;
     }
     retCode = pthread_cond_destroy(&locker.condVar);
-    if(retCode != PTHREAD_COND_DESTROY_SUCCESS)
+    if (retCode != PTHREAD_COND_DESTROY_SUCCESS)
     {
         retCode = destroyCondVarErrorHandler(retCode);
-        if(retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-        {
-            return retCode;
-        }
+        return;
     }
-    return DESTROY_LOCK_PRIMITIVE_SUCCESS;
+    return;
 }
 
 int unlockLockPrimitive()
 {
     int retCode = pthread_cond_signal(&locker.condVar);
-    //do nothingg cause it's not important here, that happened with signal. Point is, that if we bloack mutex in main thread, then cond_wait
-    //in child thread will terminate with error and child thread will close
+    // do nothingg cause it's not important here, that happened with signal. Point is, that if we bloack mutex in main thread, then cond_wait
+    // in child thread will terminate with error and child thread will close
     retCode = unlockMutex();
-    if(retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
+    if (retCode != PTHREAD_MUTEX_UNLOCK_SUCCESS)
     {
         return INIT_LOCK_PRIMITIVE_ERROR;
     }
@@ -226,11 +220,7 @@ int initLockPrimitive()
     {
         errno = retCode;
         printError(CODE_IS_IN_ERRNO, "Error while processing pthread_mutex_init\n");
-        retCode = destroyLockPrimitive();
-        if(retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-        {
-            return INIT_LOCK_PRIMITIVE_ERROR;
-        }
+        destroyLockPrimitive();
         return INIT_LOCK_PRIMITIVE_ERROR;
     }
     pthread_mutexattr_destroy(&attr);
@@ -239,11 +229,7 @@ int initLockPrimitive()
     {
         errno = retCode;
         printError(CODE_IS_IN_ERRNO, "Error while processing pthread_lock_init\n");
-        retCode = destroyLockPrimitive();
-        if(retCode == DESTROY_LOCK_PRIMITIVE_ERROR)
-        {
-            return INIT_LOCK_PRIMITIVE_ERROR;
-        }
+        destroyLockPrimitive();
         return INIT_LOCK_PRIMITIVE_ERROR;
     }
     locker.numberOfLastThread = NUMBER_OF_SECOND_THREAD;
@@ -279,9 +265,9 @@ void *printPrimitive(void *voidData)
             return (void *)PRINT_PRIMITIVE_ERROR;
         }
         retCode = pthread_cond_signal(&locker.condVar);
-        if(retCode != PTHREAD_SIGNAL_SUCCESS)
+        if (retCode != PTHREAD_SIGNAL_SUCCESS)
         {
-            return (void*)PRINT_PRIMITIVE_ERROR;
+            return (void *)PRINT_PRIMITIVE_ERROR;
         }
     }
     return (void *)PRINT_PRIMITIVE_SUCCESS;
@@ -305,20 +291,21 @@ int main()
     mainData.message = "This is first thread!\n";
     long thread1RetValue = (long)printPrimitive(&mainData);
     long thread2RetValue = PRINT_PRIMITIVE_ERROR;
-    int joinResult = pthread_join(newThread, (void**)&thread2RetValue);
-    if (joinResult != PTHREAD_JOIN_SUCCESS || (thread1RetValue == PRINT_PRIMITIVE_ERROR || thread2RetValue == PRINT_PRIMITIVE_ERROR))
+    int joinResult = pthread_join(newThread, (void **)&thread2RetValue);
+    int retCode = unlockLockPrimitive();
+    if (retCode == INIT_LOCK_PRIMITIVE_ERROR)
     {
-        int retCode = unlockLockPrimitive();
-        if(retCode == INIT_LOCK_PRIMITIVE_ERROR)
-        {
-            return ERROR;
-        }
-        retCode = destroyLockPrimitive();
-        if(retCode == INIT_LOCK_PRIMITIVE_ERROR)
-        {
-            return ERROR;
-        }
+        return ERROR;
+    }
+    destroyLockPrimitive();
+    if (joinResult != PTHREAD_JOIN_SUCCESS)
+    {
         printError(CODE_IS_IN_ERRNO, "Error: pthread_join coudn't join thread\n");
+        return ERROR;
+    }
+    if (thread1RetValue == PRINT_PRIMITIVE_ERROR || thread2RetValue == PRINT_PRIMITIVE_ERROR)
+    {
+        printError(CODE_IS_IN_ERRNO, "Error: one of the threads ended with an error\n");
         return ERROR;
     }
     pthread_exit(NULL);
