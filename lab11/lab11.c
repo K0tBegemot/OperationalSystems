@@ -200,10 +200,10 @@ void *printPrimitive(void *voidData)
     if (data->threadIndex == SECOND_THREAD_INDEX)
     {
         retCode = lockMutex((cur_mutex_index) % NUMBER_OF_MUTEX);
-        if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
-        {
-            return (void *)PRINT_PRIMITIVE_ERROR;
-        }
+    }
+    if (retCode != PTHREAD_MUTEX_LOCK_SUCCESS)
+    {
+        return (void *)PRINT_PRIMITIVE_ERROR;
     }
     for (int i = 0; i < N; i++)
     {
